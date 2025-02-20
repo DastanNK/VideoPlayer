@@ -17,9 +17,10 @@ class VideoRepository(private val videoDao: VideoDao) {
                 Log.d("VideoRepository", "get data from database")
                 return cachedVideos
             }
-            saveVideosToCache(fetchVideosFromNetwork())
+            val newVideos = fetchVideosFromNetwork()
+            saveVideosToCache(newVideos)
             Log.d("VideoRepository", "get data from network")
-            return fetchVideosFromNetwork()
+            newVideos
         } catch (e: Exception) {
             videoDao.getAllVideos().first().map { it.toDomain() }
         }
@@ -46,7 +47,7 @@ class VideoRepository(private val videoDao: VideoDao) {
 
     private suspend fun saveVideosToCache(videos: List<Video>) {
         try {
-            clearAllVideos()
+            videoDao.clearAll()
             videos.forEach { video ->
                 videoDao.addAVideo(videoCaching = video.toCaching())
             }
@@ -55,9 +56,6 @@ class VideoRepository(private val videoDao: VideoDao) {
         }
     }
 
-    private suspend fun clearAllVideos() {
-        getCachedVideos().forEach { videoDao.deleteAVideo(it) }
-    }
 
     private fun Video.toCaching(): VideoCaching {
         return VideoCaching(

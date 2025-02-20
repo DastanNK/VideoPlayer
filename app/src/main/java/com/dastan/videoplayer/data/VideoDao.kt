@@ -12,8 +12,8 @@ abstract class VideoDao {
     @Query("Select * from `video-table`")
     abstract fun getAllVideos(): Flow<List<VideoCaching>>
 
-    @Delete
-    abstract suspend fun deleteAVideo(videoCaching: VideoCaching)
+    @Query("DELETE FROM `video-table`")
+    abstract suspend fun clearAll()
 
     @Query("Select MAX(last_updated) from 'video-table'")
     abstract suspend fun getLastUpdated(): Long?

@@ -53,24 +53,30 @@ fun VideoPlayerScreen(
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
             windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
         }
+        videoPlayerViewModel.stopVideo()
         navController.popBackStack()
     }
 
 
     Column(modifier = Modifier.fillMaxSize()) {
         if (!isFullscreen) {
-            BackButton { hideVideo = true; navController.popBackStack() }
+            BackButton {
+                hideVideo = true
+                navController.popBackStack()
+                videoPlayerViewModel.stopVideo()
+            }
         }
         Column(modifier = Modifier.wrapContentHeight()) {
             if (!hideVideo) {
+
                 VideoPlayerView(videoPlayerViewModel, isFullscreen, wifiState)
                 VideoPlayerControls(videoPlayerViewModel, isFullscreen, isPause, { isPause = !isPause }) {
                     isFullscreen = !isFullscreen
                 }
+                VideoDetailsSection(video)
             }
 
         }
-        VideoDetailsSection(video)
 
 
     }
@@ -162,6 +168,7 @@ fun VideoPlayerControls(
         else Modifier.fillMaxWidth().height(28.dp),
         verticalArrangement = Arrangement.Bottom
     ) {
+        Spacer(modifier = Modifier.weight(1f))
         Row(
             modifier = Modifier.fillMaxWidth().height(28.dp).padding(4.dp),
             horizontalArrangement = Arrangement.SpaceEvenly

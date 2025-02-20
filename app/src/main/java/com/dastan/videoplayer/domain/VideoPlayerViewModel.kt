@@ -16,9 +16,6 @@ class VideoPlayerViewModel @Inject constructor(
     private val _currentVideo = MutableStateFlow<Video?>(null)
     //val currentVideo: StateFlow<Video?> = _currentVideo.asStateFlow()
 
-    init {
-        player.prepare()
-    }
 
     fun updateVideo(newVideo: Video) {
         _currentVideo.value = newVideo
@@ -31,6 +28,7 @@ class VideoPlayerViewModel @Inject constructor(
         val mediaItem = _currentVideo.value?.sources?.let { MediaItem.fromUri(it) }
         mediaItem?.let {
             player.setMediaItem(it)
+            player.prepare()
             player.play()
         }
     }
@@ -43,9 +41,9 @@ class VideoPlayerViewModel @Inject constructor(
         player.play()
     }
 
-    /*fun stopVideo() {
+    fun stopVideo() {
         player.stop()
-    }*/
+    }
 
     fun skipForward(seconds: Int = 10) {
         player.seekTo((player.currentPosition + seconds * 1000).coerceAtMost(player.duration))
