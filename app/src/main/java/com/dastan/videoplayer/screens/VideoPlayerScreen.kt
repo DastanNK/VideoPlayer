@@ -3,17 +3,20 @@ package com.dastan.videoplayer.screens
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -25,7 +28,12 @@ import com.dastan.videoplayer.domain.VideoPlayerViewModel
 import kotlinx.coroutines.delay
 
 @Composable
-fun VideoPlayerScreen(navController: NavController, videoPlayerViewModel: VideoPlayerViewModel, video: Video) {
+fun VideoPlayerScreen(
+    navController: NavController,
+    videoPlayerViewModel: VideoPlayerViewModel,
+    video: Video,
+    wifiState: Boolean
+) {
 
     val context = LocalContext.current
     val activity = context as? Activity
@@ -53,20 +61,31 @@ fun VideoPlayerScreen(navController: NavController, videoPlayerViewModel: VideoP
         if (!isFullscreen) {
             BackButton { hideVideo = true; navController.popBackStack() }
         }
-        Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.wrapContentHeight()) {
             if (!hideVideo) {
-                VideoPlayerView(videoPlayerViewModel, isFullscreen)
+                VideoPlayerView(videoPlayerViewModel, isFullscreen, wifiState)
                 VideoPlayerControls(videoPlayerViewModel, isFullscreen, isPause, { isPause = !isPause }) {
                     isFullscreen = !isFullscreen
                 }
             }
 
         }
+        VideoDetailsSection(video)
 
 
     }
 
 }
+
+@Composable
+fun VideoDetailsSection(video: Video) {
+    Column(modifier = Modifier.padding(8.dp)) {
+        Text(video.title, fontSize = 16.sp, modifier = Modifier.padding(4.dp))
+        Text(video.subtitle, fontSize = 14.sp, modifier = Modifier.padding(4.dp))
+        Text(video.description, fontSize = 14.sp, modifier = Modifier.padding(4.dp))
+    }
+}
+
 
 @Composable
 fun BackButton(onBack: () -> Unit) {
@@ -107,17 +126,27 @@ fun HandleFullscreenMode(
 
 
 @Composable
-fun VideoPlayerView(videoPlayerViewModel: VideoPlayerViewModel, isFullscreen: Boolean) {
-    AndroidView(
-        factory = { context ->
-            PlayerView(context).apply {
-                player = videoPlayerViewModel.player
-                useController = false
-            }
-        },
-        modifier = if (isFullscreen) Modifier.fillMaxSize()
-        else Modifier.fillMaxWidth().height(250.dp)
-    )
+fun VideoPlayerView(videoPlayerViewModel: VideoPlayerViewModel, isFullscreen: Boolean, wifiState: Boolean) {
+    if (wifiState) {
+        AndroidView(
+            factory = { context ->
+                PlayerView(context).apply {
+                    player = videoPlayerViewModel.player
+                    useController = false
+                }
+            },
+            modifier = if (isFullscreen) Modifier.fillMaxSize()
+            else Modifier.fillMaxWidth().height(250.dp)
+        )
+    } else {
+        Image(
+            painterResource(R.drawable.placeholder),
+            contentDescription = null,
+            modifier = if (isFullscreen) Modifier.fillMaxWidth().height(320.dp)
+            else Modifier.fillMaxWidth().height(250.dp)
+        )
+    }
+
 }
 
 @Composable
@@ -130,7 +159,7 @@ fun VideoPlayerControls(
 ) {
     Column(
         modifier = if (isFullscreen) Modifier.fillMaxSize()
-        else Modifier.fillMaxWidth().height(280.dp),
+        else Modifier.fillMaxWidth().height(28.dp),
         verticalArrangement = Arrangement.Bottom
     ) {
         Row(

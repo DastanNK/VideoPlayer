@@ -5,10 +5,13 @@ import android.net.wifi.WifiManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -23,6 +26,7 @@ import com.dastan.videoplayer.domain.VideoCollectionViewModel
 import com.dastan.videoplayer.domain.VideoPlayerViewModel
 import com.dastan.videoplayer.screens.VideoCollectionScreen
 import com.dastan.videoplayer.screens.VideoPlayerScreen
+import com.dastan.videoplayer.domain.WifiViewModel
 import com.dastan.videoplayer.ui.theme.VideoPlayerTheme
 import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
@@ -30,15 +34,17 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private lateinit var wifiReceiver: WifiBroadcastReceiver
+    private val wifiViewModel: WifiViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        wifiReceiver = WifiBroadcastReceiver(){WiFi->
+        wifiReceiver = WifiBroadcastReceiver(){isConnected->
             //TODO
+            wifiViewModel.updateWifiState(isConnected)
         }
         setContent {
             VideoPlayerTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    MyApp()
+                    MyApp(wifiViewModel)
                 }
             }
         }
@@ -55,12 +61,13 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MyApp(){
-    val navController= rememberNavController()
+fun MyApp(wifiViewModel: WifiViewModel) {
+    val navController = rememberNavController()
     val videoCollectionViewModel: VideoCollectionViewModel = viewModel()
     val videoPlayerViewModel = hiltViewModel<VideoPlayerViewModel>()
-    NavHost(navController=navController, startDestination = Screen.VideoCollectionScreen.route){
-        composable(Screen.VideoCollectionScreen.route){
+    val wifiState by wifiViewModel.wifiState.collectAsState()
+    NavHost(navController = navController, startDestination = Screen.VideoCollectionScreen.route) {
+        composable(Screen.VideoCollectionScreen.route) {
             VideoCollectionScreen(navController, videoCollectionViewModel)
         }
         composable(
@@ -71,9 +78,7 @@ fun MyApp(){
         ) { navBackStackEntry ->
             val videoJson = navBackStackEntry.arguments?.getString("video")
             val video = Gson().fromJson(videoJson, Video::class.java)
-            VideoPlayerScreen(navController, videoPlayerViewModel, video)
+            VideoPlayerScreen(navController, videoPlayerViewModel, video, wifiState)
         }
     }
-
 }
-
