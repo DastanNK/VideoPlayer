@@ -12,6 +12,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -68,12 +69,22 @@ fun VideoPlayerScreen(
         }
         Column(modifier = Modifier.wrapContentHeight()) {
             if (!hideVideo) {
-
-                VideoPlayerView(videoPlayerViewModel, isFullscreen, wifiState)
-                VideoPlayerControls(videoPlayerViewModel, isFullscreen, isPause, { isPause = !isPause }) {
-                    isFullscreen = !isFullscreen
+                Column(modifier = if (!isFullscreen) Modifier.height(280.dp) else Modifier.wrapContentHeight()) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        VideoPlayerView(videoPlayerViewModel, isFullscreen, wifiState)
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            VideoPlayerControls(videoPlayerViewModel, isFullscreen, isPause, { isPause = !isPause }) {
+                                isFullscreen = !isFullscreen
+                            }
+                        }
+                    }
                 }
-                VideoDetailsSection(video)
+                if (!isFullscreen) {
+                    VideoDetailsSection(video)
+                }
             }
 
         }
@@ -163,38 +174,33 @@ fun VideoPlayerControls(
     onPlayPauseToggle: () -> Unit,
     onFullscreenToggle: () -> Unit
 ) {
-    Column(
-        modifier = if (isFullscreen) Modifier.fillMaxSize()
-        else Modifier.fillMaxWidth().height(28.dp),
-        verticalArrangement = Arrangement.Bottom
+
+    Row(
+        modifier = Modifier.fillMaxWidth().height(28.dp).padding(4.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        Spacer(modifier = Modifier.weight(1f))
-        Row(
-            modifier = Modifier.fillMaxWidth().height(28.dp).padding(4.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            IconButton(onClick = { videoPlayerViewModel.skipBackward(10) }) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Rewind 10s")
-            }
-            IconButton(onClick = {
-                if (isPause) videoPlayerViewModel.resumeVideo()
-                else videoPlayerViewModel.pauseVideo()
-                onPlayPauseToggle()
-            }) {
-                Icon(
-                    painter = if (isPause) painterResource(R.drawable.play) else painterResource(R.drawable.pause),
-                    contentDescription = "Play/Pause"
-                )
-            }
-            IconButton(onClick = { videoPlayerViewModel.skipForward(10) }) {
-                Icon(Icons.Default.ArrowForward, contentDescription = "Skip 10s")
-            }
-            IconButton(onClick = onFullscreenToggle) {
-                Icon(
-                    painter = if (isFullscreen) painterResource(R.drawable.full_screen) else painterResource(R.drawable.fullscreen_exit_icon),
-                    contentDescription = "Toggle Fullscreen"
-                )
-            }
+        IconButton(onClick = { videoPlayerViewModel.skipBackward(10) }) {
+            Icon(Icons.Default.ArrowBack, contentDescription = "Rewind 10s")
+        }
+        IconButton(onClick = {
+            if (isPause) videoPlayerViewModel.resumeVideo()
+            else videoPlayerViewModel.pauseVideo()
+            onPlayPauseToggle()
+        }) {
+            Icon(
+                painter = if (isPause) painterResource(R.drawable.play) else painterResource(R.drawable.pause),
+                contentDescription = "Play/Pause"
+            )
+        }
+        IconButton(onClick = { videoPlayerViewModel.skipForward(10) }) {
+            Icon(Icons.Default.ArrowForward, contentDescription = "Skip 10s")
+        }
+        IconButton(onClick = onFullscreenToggle) {
+            Icon(
+                painter = if (isFullscreen) painterResource(R.drawable.full_screen) else painterResource(R.drawable.fullscreen_exit_icon),
+                contentDescription = "Toggle Fullscreen"
+            )
         }
     }
+
 }
