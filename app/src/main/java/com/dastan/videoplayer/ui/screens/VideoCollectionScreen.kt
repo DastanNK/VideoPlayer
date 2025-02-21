@@ -1,5 +1,6 @@
 package com.dastan.videoplayer.ui.screens
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,6 +19,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -109,10 +113,70 @@ fun NoVideosMessage() {
             .verticalScroll(rememberScrollState()),
         contentAlignment = Alignment.Center
     ) {
-        Text("${R.string.no_videos_available}")
+        ShimmerLoadingList()
     }
 }
 
+@Composable
+fun ShimmerEffectCard() {
+    val shimmerColors = listOf(
+        Color.Gray.copy(alpha = 0.9f),
+        Color.LightGray.copy(alpha = 0.3f),
+        Color.Gray.copy(alpha = 0.9f)
+    )
+
+    val transition = rememberInfiniteTransition()
+    val translateAnim by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        )
+    )
+
+    val brush = Brush.linearGradient(
+        colors = shimmerColors,
+        start = Offset(translateAnim, 0f),
+        end = Offset(translateAnim + 200f, 0f)
+    )
+    Column {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(150.dp)
+                .background(brush, shape = RoundedCornerShape(8.dp))
+        )
+        Row(modifier = Modifier
+            .fillMaxWidth()
+            .padding(4.dp)
+            .padding(start = 8.dp, end = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween){
+            Box(
+                modifier = Modifier
+                    .width(40.dp)
+                    .height(16.dp)
+                    .background(brush, shape = RoundedCornerShape(8.dp))
+            )
+            Box(
+                modifier = Modifier
+                    .width(40.dp)
+                    .height(16.dp)
+                    .background(brush, shape = RoundedCornerShape(8.dp))
+            )
+        }
+    }
+
+
+}
+@Composable
+fun ShimmerLoadingList() {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        repeat(5) {
+            ShimmerEffectCard()
+        }
+    }
+}
 
 @Composable
 fun Items(results: List<Video>, navController: NavController) {
@@ -130,7 +194,7 @@ fun VideoEachItems(result: Video, navController: NavController) {
     Box(
         modifier = Modifier
             .padding(8.dp).fillMaxWidth().wrapContentHeight()
-            .background(color = MaterialTheme.colorScheme.background)
+            //.background(color = MaterialTheme.colorScheme.background)
             .clickable {
                 navController.navigate(Screen.VideoPlayerScreen.createRoute(result))
             }
