@@ -18,8 +18,7 @@
                 android:name=".MainActivity"
                 android:exported="true"
                 android:label="@string/app_name"
-                android:theme="@style/Theme.VideoPlayer"
-                android:configChanges="orientation|screenSize|smallestScreenSize">
+                android:theme="@style/Theme.VideoPlayer">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 

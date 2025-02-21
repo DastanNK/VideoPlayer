@@ -1,9 +1,9 @@
 package com.dastan.videoplayer.data.repository
 
 import android.util.Log
-import com.dastan.videoplayer.data.RetrofitInstance
+import com.dastan.videoplayer.data.remote.RetrofitInstance
 import com.dastan.videoplayer.data.model.VideoCaching
-import com.dastan.videoplayer.data.VideoDao
+import com.dastan.videoplayer.data.local.VideoDao
 import com.dastan.videoplayer.data.model.Video
 import kotlinx.coroutines.flow.first
 
@@ -41,8 +41,18 @@ class VideoRepository(private val videoDao: VideoDao) {
     }
 
     private suspend fun fetchVideosFromNetwork(): List<Video> {
-        val response = RetrofitInstance.api.retrieveData().categories.flatMap { it.videos }
-        return response
+        return try {
+            val response = RetrofitInstance.api.retrieveData()
+            if (response.isSuccessful) {
+                response.body()?.categories?.flatMap { it.videos } ?: emptyList()
+            } else {
+                Log.e("VideoRepository", "Network error: ${response.code()}")
+                throw Exception("Network error: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            Log.e("VideoRepository", "Exception fetching videos: ${e.message}")
+            throw e
+        }
     }
 
     private suspend fun saveVideosToCache(videos: List<Video>) {

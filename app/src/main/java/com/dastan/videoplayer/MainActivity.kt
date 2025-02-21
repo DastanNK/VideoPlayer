@@ -24,8 +24,8 @@ import com.dastan.videoplayer.data.model.Screen
 import com.dastan.videoplayer.data.model.Video
 import com.dastan.videoplayer.domain.VideoCollectionViewModel
 import com.dastan.videoplayer.domain.VideoPlayerViewModel
-import com.dastan.videoplayer.screens.VideoCollectionScreen
-import com.dastan.videoplayer.screens.VideoPlayerScreen
+import com.dastan.videoplayer.ui.screens.VideoCollectionScreen
+import com.dastan.videoplayer.ui.screens.VideoPlayerScreen
 import com.dastan.videoplayer.domain.WifiViewModel
 import com.dastan.videoplayer.ui.theme.VideoPlayerTheme
 import com.google.gson.Gson

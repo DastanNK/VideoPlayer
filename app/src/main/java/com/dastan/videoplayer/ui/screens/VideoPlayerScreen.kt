@@ -1,19 +1,25 @@
-package com.dastan.videoplayer.screens
+package com.dastan.videoplayer.ui.screens
 
 import android.app.Activity
 import android.content.pm.ActivityInfo
+import android.content.res.Configuration
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -21,6 +27,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.ui.PlayerView
 import androidx.navigation.NavController
 import com.dastan.videoplayer.R
@@ -41,57 +50,137 @@ fun VideoPlayerScreen(
     val windowInsetsController = WindowInsetsControllerCompat(activity?.window!!, activity.window.decorView)
 
     var hideVideo by remember { mutableStateOf(false) }
-    var isPause by remember { mutableStateOf(false) }
+    var isPause by rememberSaveable { mutableStateOf(false) }
     var isFullscreen by remember { mutableStateOf(false) }
 
     LaunchedEffect(video) {
-        videoPlayerViewModel.updateVideo(video)
+        if (videoPlayerViewModel.currentVideo.value != video) {
+            videoPlayerViewModel.updateVideo(video)
+        }
+        videoPlayerViewModel.restorePosition()
+        if (!isPause) {
+            videoPlayerViewModel.resumeVideo()
+        }
     }
+
     HandleFullscreenMode(isFullscreen, activity, windowInsetsController)
     BackHandler {
-        hideVideo = true
-        if (isFullscreen) {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
-        }
-        videoPlayerViewModel.stopVideo()
-        navController.popBackStack()
+        exitVideoScreen(navController, videoPlayerViewModel, activity, windowInsetsController, isFullscreen){hideVideo=true}
+    }
+    ObserveOrientation { isLandscape ->
+        isFullscreen = isLandscape
     }
 
+    ObserveLifecycle(videoPlayerViewModel)
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = if (!isFullscreen) Modifier.fillMaxSize()
+            .verticalScroll(rememberScrollState()) else Modifier.fillMaxSize()
+    ) {
         if (!isFullscreen) {
             BackButton {
-                hideVideo = true
-                navController.popBackStack()
-                videoPlayerViewModel.stopVideo()
-            }
-        }
-        Column(modifier = Modifier.wrapContentHeight()) {
-            if (!hideVideo) {
-                Column(modifier = if (!isFullscreen) Modifier.height(280.dp) else Modifier.wrapContentHeight()) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        VideoPlayerView(videoPlayerViewModel, isFullscreen, wifiState)
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.BottomCenter
-                        ) {
-                            VideoPlayerControls(videoPlayerViewModel, isFullscreen, isPause, { isPause = !isPause }) {
-                                isFullscreen = !isFullscreen
-                            }
-                        }
-                    }
-                }
-                if (!isFullscreen) {
-                    VideoDetailsSection(video)
+                exitVideoScreen(navController, videoPlayerViewModel, activity, windowInsetsController, isFullscreen){
+                    hideVideo=true
                 }
             }
-
         }
+        VideoPlayerScreenContent(
+            videoPlayerViewModel = videoPlayerViewModel,
+            isFullscreen = isFullscreen,
+            hideVideo = hideVideo,
+            wifiState = wifiState,
+            isPause = isPause,
+            onPauseToggle = { isPause = !isPause },
+            onFullscreenToggle = { isFullscreen = !isFullscreen },
+            video = video,
+            modifier = if (!isFullscreen) Modifier.height(280.dp) else Modifier.fillMaxSize()
+        )
 
 
     }
 
+}
+
+@Composable
+private fun VideoPlayerScreenContent(
+    videoPlayerViewModel: VideoPlayerViewModel,
+    isFullscreen: Boolean,
+    hideVideo: Boolean,
+    wifiState: Boolean,
+    isPause: Boolean,
+    onPauseToggle: () -> Unit,
+    onFullscreenToggle: () -> Unit,
+    video: Video,
+    modifier: Modifier=Modifier
+) {
+    Column(modifier = modifier) {
+        if (!hideVideo) {
+            Column(modifier = modifier) {
+                Box(
+                    modifier = modifier
+                ) {
+                    VideoPlayerView(videoPlayerViewModel, isFullscreen, wifiState)
+
+                    Box(
+                        modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = 16.dp),
+                    ) {
+                        VideoPlayerControls(videoPlayerViewModel, isFullscreen, isPause, onPauseToggle, onFullscreenToggle)
+                    }
+                }
+            }
+        }
+    }
+    if (!isFullscreen) {
+        VideoDetailsSection(video)
+    }
+}
+
+
+@Composable
+fun ObserveLifecycle(videoPlayerViewModel: VideoPlayerViewModel) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> videoPlayerViewModel.rememberPosition()
+                Lifecycle.Event.ON_RESUME -> videoPlayerViewModel.restorePosition()
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+}
+
+private fun exitVideoScreen(
+    navController: NavController,
+    videoPlayerViewModel: VideoPlayerViewModel,
+    activity: Activity?,
+    windowInsetsController: WindowInsetsControllerCompat?,
+    isFullscreen: Boolean,
+    onHideVideo: () -> Unit
+) {
+    onHideVideo()
+
+    if (isFullscreen) {
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        windowInsetsController?.show(WindowInsetsCompat.Type.systemBars())
+    }
+
+    videoPlayerViewModel.stopVideo()
+    videoPlayerViewModel.clearVideo()
+    navController.popBackStack()
+}
+
+@Composable
+fun ObserveOrientation(
+    onOrientationChange: (Boolean) -> Unit
+) {
+    val configuration = LocalConfiguration.current
+    LaunchedEffect(configuration.orientation) {
+        val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        onOrientationChange(isLandscape)
+    }
 }
 
 @Composable
@@ -125,7 +214,8 @@ fun HandleFullscreenMode(
         activity?.requestedOrientation = if (isFullscreen) {
             ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         } else {
-            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+
         }
 
         delay(100)
@@ -138,6 +228,7 @@ fun HandleFullscreenMode(
                 it.show(WindowInsetsCompat.Type.systemBars())
             }
         }
+
     }
 }
 

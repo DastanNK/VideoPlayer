@@ -1,4 +1,4 @@
-package com.dastan.videoplayer.data
+package com.dastan.videoplayer.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase

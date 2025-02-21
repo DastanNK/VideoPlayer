@@ -1,4 +1,4 @@
-package com.dastan.videoplayer
+package com.dastan.videoplayer.di
 
 import android.app.Application
 import androidx.media3.common.Player

@@ -1,8 +1,8 @@
-package com.dastan.videoplayer
+package com.dastan.videoplayer.di
 
 import android.content.Context
 import androidx.room.Room
-import com.dastan.videoplayer.data.VideoCacheDatabase
+import com.dastan.videoplayer.data.local.VideoCacheDatabase
 import com.dastan.videoplayer.data.repository.VideoRepository
 
 object Graph {

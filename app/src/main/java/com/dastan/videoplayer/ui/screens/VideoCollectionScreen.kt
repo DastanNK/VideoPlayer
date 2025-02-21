@@ -1,4 +1,4 @@
-package com.dastan.videoplayer.screens
+package com.dastan.videoplayer.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -109,7 +109,7 @@ fun NoVideosMessage() {
             .verticalScroll(rememberScrollState()),
         contentAlignment = Alignment.Center
     ) {
-        Text("No videos available. Pull down to refresh.")
+        Text("${R.string.no_videos_available}")
     }
 }
 
@@ -174,7 +174,7 @@ fun VideoInfo(title: String, timeline: String) {
             .padding(start = 8.dp, end = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(title, fontSize = 14.sp)
-        Text(timeline, fontSize = 14.sp)
+        Text(title, fontSize = 18.sp)
+        Text(timeline, fontSize = 18.sp)
     }
 }
