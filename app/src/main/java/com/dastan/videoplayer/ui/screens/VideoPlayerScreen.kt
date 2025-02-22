@@ -57,7 +57,6 @@ fun VideoPlayerScreen(
         if (videoPlayerViewModel.currentVideo.value != video) {
             videoPlayerViewModel.updateVideo(video)
         }
-        videoPlayerViewModel.restorePosition()
         if (!isPause) {
             videoPlayerViewModel.resumeVideo()
         }
@@ -160,16 +159,18 @@ private fun exitVideoScreen(
     isFullscreen: Boolean,
     onHideVideo: () -> Unit
 ) {
-    onHideVideo()
+
 
     if (isFullscreen) {
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         windowInsetsController?.show(WindowInsetsCompat.Type.systemBars())
+    }else{
+        onHideVideo()
+        videoPlayerViewModel.stopVideo()
+        videoPlayerViewModel.clearVideo()
+        navController.popBackStack()
     }
 
-    videoPlayerViewModel.stopVideo()
-    videoPlayerViewModel.clearVideo()
-    navController.popBackStack()
 }
 
 @Composable

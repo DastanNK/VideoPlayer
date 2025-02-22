@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -144,7 +145,7 @@ fun ShimmerEffectCard() {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(150.dp)
+                .height(200.dp)
                 .background(brush, shape = RoundedCornerShape(8.dp))
         )
         Row(modifier = Modifier
@@ -194,7 +195,6 @@ fun VideoEachItems(result: Video, navController: NavController) {
     Box(
         modifier = Modifier
             .padding(8.dp).fillMaxWidth().wrapContentHeight()
-            //.background(color = MaterialTheme.colorScheme.background)
             .clickable {
                 navController.navigate(Screen.VideoPlayerScreen.createRoute(result))
             }
@@ -222,7 +222,7 @@ fun VideoThumbnail(thumbUrl: String) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(4.dp)
-            .wrapContentHeight()
+            .height(200.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.background),
         contentScale = ContentScale.Crop
@@ -238,7 +238,9 @@ fun VideoInfo(title: String, timeline: String) {
             .padding(start = 8.dp, end = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(title, fontSize = 18.sp)
+        Text(title, fontSize = 18.sp, overflow = TextOverflow.Ellipsis, maxLines = 1,
+            modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.width(8.dp))
         Text(timeline, fontSize = 18.sp)
     }
 }

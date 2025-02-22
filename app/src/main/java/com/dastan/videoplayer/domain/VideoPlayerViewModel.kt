@@ -26,15 +26,20 @@ class VideoPlayerViewModel @Inject constructor(
     }
 
     fun playVideo() {
+        clearMediaItems()
         val mediaItem = _currentVideo.value?.sources?.let { MediaItem.fromUri(it) }
         mediaItem?.let {
             player.setMediaItem(it)
             player.prepare()
-            //player.play()
-
         }
     }
+
+    fun clearMediaItems() {
+        player.clearMediaItems()
+    }
+
     fun clearVideo() {
+        lastKnownPosition=0L
         _currentVideo.value = null
     }
     fun pauseVideo() {
@@ -58,7 +63,9 @@ class VideoPlayerViewModel @Inject constructor(
     }
 
     fun rememberPosition() {
-        lastKnownPosition = player.currentPosition
+        if (lastKnownPosition != 0L) {
+            lastKnownPosition = player.currentPosition
+        }
     }
 
     fun restorePosition() {
