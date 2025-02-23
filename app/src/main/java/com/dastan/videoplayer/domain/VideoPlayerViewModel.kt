@@ -1,13 +1,16 @@
 package com.dastan.videoplayer.domain
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import com.dastan.videoplayer.data.model.Video
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -19,6 +22,11 @@ class VideoPlayerViewModel @Inject constructor(
     val currentVideo: StateFlow<Video?> = _currentVideo.asStateFlow()
     private var lastKnownPosition: Long = 0L
 
+    private val _currentPosition = MutableStateFlow(0f)
+    val currentPosition: StateFlow<Float> = _currentPosition
+
+    private val _duration = MutableStateFlow(0f)
+    val duration: StateFlow<Float> = _duration
 
     fun updateVideo(newVideo: Video) {
         _currentVideo.value = newVideo
@@ -26,21 +34,26 @@ class VideoPlayerViewModel @Inject constructor(
     }
 
     fun playVideo() {
-        clearMediaItems()
         val mediaItem = _currentVideo.value?.sources?.let { MediaItem.fromUri(it) }
         mediaItem?.let {
             player.setMediaItem(it)
             player.prepare()
         }
+        viewModelScope.launch {
+
+            while (true) {
+                _currentPosition.value = player?.currentPosition?.toFloat() ?: 0f
+                _duration.value = player?.duration?.takeIf { it > 0 }?.toFloat() ?: 0f
+                delay(500)
+            }
+        }
     }
 
-    fun clearMediaItems() {
-        player.clearMediaItems()
-    }
 
     fun clearVideo() {
         lastKnownPosition=0L
         _currentVideo.value = null
+        player.clearMediaItems()
     }
     fun pauseVideo() {
         player.pause()
@@ -72,6 +85,16 @@ class VideoPlayerViewModel @Inject constructor(
         if (lastKnownPosition > 0) {
             player.seekTo(lastKnownPosition)
         }
+    }
+
+    fun seekTo(position: Float) {
+        player?.seekTo(position.toLong())
+    }
+
+    fun formatTime(millis: Long): String {
+        val seconds = (millis / 1000) % 60
+        val minutes = (millis / 1000) / 60
+        return String.format("%02d:%02d", minutes, seconds)
     }
 
     override fun onCleared() {

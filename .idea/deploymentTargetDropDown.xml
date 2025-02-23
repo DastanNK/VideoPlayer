@@ -2,6 +2,9 @@
 <project version="4">
   <component name="deploymentTargetDropDown">
     <value>
+      <entry key="VideoPlayerSeekBarP">
+        <State />
+      </entry>
       <entry key="app">
         <State>
           <targetSelectedWithDropDown>
@@ -10,12 +13,12 @@
               <deviceKey>
                 <Key>
                   <type value="VIRTUAL_DEVICE_PATH" />
-                  <value value="$USER_HOME$/.android/avd/Pixel_3_API_34.avd" />
+                  <value value="$USER_HOME$/.android/avd/Medium_Phone_API_34.avd" />
                 </Key>
               </deviceKey>
             </Target>
           </targetSelectedWithDropDown>
-          <timeTargetWasSelectedWithDropDown value="2025-02-21T15:09:11.669465Z" />
+          <timeTargetWasSelectedWithDropDown value="2025-02-22T21:55:25.106119Z" />
         </State>
       </entry>
     </value>

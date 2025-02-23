@@ -5,23 +5,27 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -64,7 +68,13 @@ fun VideoPlayerScreen(
 
     HandleFullscreenMode(isFullscreen, activity, windowInsetsController)
     BackHandler {
-        exitVideoScreen(navController, videoPlayerViewModel, activity, windowInsetsController, isFullscreen){hideVideo=true}
+        exitVideoScreen(
+            navController,
+            videoPlayerViewModel,
+            activity,
+            windowInsetsController,
+            isFullscreen
+        ) { hideVideo = true }
     }
     ObserveOrientation { isLandscape ->
         isFullscreen = isLandscape
@@ -78,8 +88,8 @@ fun VideoPlayerScreen(
     ) {
         if (!isFullscreen) {
             BackButton {
-                exitVideoScreen(navController, videoPlayerViewModel, activity, windowInsetsController, isFullscreen){
-                    hideVideo=true
+                exitVideoScreen(navController, videoPlayerViewModel, activity, windowInsetsController, isFullscreen) {
+                    hideVideo = true
                 }
             }
         }
@@ -92,7 +102,7 @@ fun VideoPlayerScreen(
             onPauseToggle = { isPause = !isPause },
             onFullscreenToggle = { isFullscreen = !isFullscreen },
             video = video,
-            modifier = if (!isFullscreen) Modifier.height(280.dp) else Modifier.fillMaxSize()
+            modifier = if (!isFullscreen) Modifier.wrapContentHeight() else Modifier.fillMaxSize()
         )
 
 
@@ -110,7 +120,7 @@ private fun VideoPlayerScreenContent(
     onPauseToggle: () -> Unit,
     onFullscreenToggle: () -> Unit,
     video: Video,
-    modifier: Modifier=Modifier
+    modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
         if (!hideVideo) {
@@ -120,18 +130,27 @@ private fun VideoPlayerScreenContent(
                 ) {
                     VideoPlayerView(videoPlayerViewModel, isFullscreen, wifiState)
 
-                    Box(
-                        modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = 16.dp),
+                    Column(
+                        modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = 4.dp),
                     ) {
-                        VideoPlayerControls(videoPlayerViewModel, isFullscreen, isPause, onPauseToggle, onFullscreenToggle)
+                        VideoPlayerControls(
+                            videoPlayerViewModel,
+                            isFullscreen,
+                            isPause,
+                            onPauseToggle,
+                            onFullscreenToggle
+                        )
+                        VideoPlayerSeekBar(videoPlayerViewModel, isFullscreen)
+
                     }
                 }
             }
+            if (!isFullscreen) {
+                VideoDetailsSection(video)
+            }
         }
     }
-    if (!isFullscreen) {
-        VideoDetailsSection(video)
-    }
+
 }
 
 
@@ -164,7 +183,7 @@ private fun exitVideoScreen(
     if (isFullscreen) {
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         windowInsetsController?.show(WindowInsetsCompat.Type.systemBars())
-    }else{
+    } else {
         onHideVideo()
         videoPlayerViewModel.stopVideo()
         videoPlayerViewModel.clearVideo()
@@ -186,7 +205,7 @@ fun ObserveOrientation(
 
 @Composable
 fun VideoDetailsSection(video: Video) {
-    Column(modifier = Modifier.padding(8.dp)) {
+    Column {
         Text(video.title, fontSize = 16.sp, modifier = Modifier.padding(4.dp))
         Text(video.subtitle, fontSize = 14.sp, modifier = Modifier.padding(4.dp))
         Text(video.description, fontSize = 14.sp, modifier = Modifier.padding(4.dp))
@@ -196,7 +215,7 @@ fun VideoDetailsSection(video: Video) {
 
 @Composable
 fun BackButton(onBack: () -> Unit) {
-    Row(modifier = Modifier.padding(8.dp).fillMaxWidth().height(28.dp)) {
+    Row(modifier = Modifier.fillMaxWidth().height(28.dp)) {
         Icon(
             Icons.Default.Clear,
             contentDescription = "Close",
@@ -266,13 +285,15 @@ fun VideoPlayerControls(
     onPlayPauseToggle: () -> Unit,
     onFullscreenToggle: () -> Unit
 ) {
-
+    val duration by videoPlayerViewModel.duration.collectAsState()
+    val currentPosition by videoPlayerViewModel.currentPosition.collectAsState()
     Row(
-        modifier = Modifier.fillMaxWidth().height(28.dp).padding(4.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly
+        modifier = Modifier.fillMaxWidth().height(20.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically
     ) {
+        Text(videoPlayerViewModel.formatTime(currentPosition.toLong()), fontSize = 12.sp, color = Color.White)
         IconButton(onClick = { videoPlayerViewModel.skipBackward(10) }) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Rewind 10s")
+            Icon(Icons.Default.ArrowBack, contentDescription = "Rewind 10s", tint = Color.White)
         }
         IconButton(onClick = {
             if (isPause) videoPlayerViewModel.resumeVideo()
@@ -281,18 +302,101 @@ fun VideoPlayerControls(
         }) {
             Icon(
                 painter = if (isPause) painterResource(R.drawable.play) else painterResource(R.drawable.pause),
-                contentDescription = "Play/Pause"
+                contentDescription = "Play/Pause",
+                tint = Color.White
             )
         }
         IconButton(onClick = { videoPlayerViewModel.skipForward(10) }) {
-            Icon(Icons.Default.ArrowForward, contentDescription = "Skip 10s")
+            Icon(Icons.Default.ArrowForward, contentDescription = "Skip 10s", tint = Color.White)
         }
         IconButton(onClick = onFullscreenToggle) {
             Icon(
                 painter = if (isFullscreen) painterResource(R.drawable.full_screen) else painterResource(R.drawable.fullscreen_exit_icon),
-                contentDescription = "Toggle Fullscreen"
+                contentDescription = "Toggle Fullscreen", tint = Color.White
             )
         }
+        Text(videoPlayerViewModel.formatTime(duration.toLong()), fontSize = 12.sp, color = Color.White)
+
     }
 
 }
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun VideoPlayerSeekBar(videoPlayerViewModel: VideoPlayerViewModel, isFullscreen:Boolean) {
+    val duration by videoPlayerViewModel.duration.collectAsState()
+    val currentPosition by videoPlayerViewModel.currentPosition.collectAsState()
+    var sliderPosition by remember { mutableStateOf(0f) }
+    var isDragging by remember { mutableStateOf(false) }
+    var isSeeking by remember { mutableStateOf(false) }
+
+    val displayPosition = if (isDragging || isSeeking) sliderPosition else currentPosition
+    var sliderWidth by remember { mutableStateOf(0) }
+
+    LaunchedEffect(currentPosition, sliderPosition, isSeeking) {
+        if (isSeeking && kotlin.math.abs(currentPosition - sliderPosition) < 1f) {
+            isSeeking = false
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            if (isDragging || isSeeking) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .offset {
+                            IntOffset(
+                                x = ((displayPosition / duration) * sliderWidth).toInt(),
+                                y = 0
+                            )
+                        }
+                        .background(Color.Black, RoundedCornerShape(2.dp))
+
+                ) {
+                    Text(
+                        text = videoPlayerViewModel.formatTime(displayPosition.toLong()),
+                        color = Color.White,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+
+            Slider(
+                value = displayPosition,
+                onValueChange = { newPosition ->
+                    sliderPosition = newPosition
+                    isDragging = true
+                },
+                onValueChangeFinished = {
+                    videoPlayerViewModel.seekTo(sliderPosition)
+                    isDragging = false
+                    isSeeking = true
+                },
+                valueRange = 0f..duration,
+                modifier = Modifier.fillMaxWidth().onGloballyPositioned { coordinates ->
+                    sliderWidth = coordinates.size.width
+                },
+                colors = SliderDefaults.colors(
+                    thumbColor = Color.Red,
+                    activeTrackColor = Color.Red,
+                    inactiveTrackColor = Color.Gray.copy(alpha = 0.5f)
+                ),
+                thumb = {
+                    val scale = animateFloatAsState(if (isDragging || isSeeking) 1.5f else 1f)
+                    Box(
+                        modifier = Modifier
+                            .size(16.dp * scale.value)
+                            .background(Color.Red, CircleShape)
+                    )
+                }
+            )
+        }
+    }
+}
+
