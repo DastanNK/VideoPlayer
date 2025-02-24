@@ -140,7 +140,7 @@ private fun VideoPlayerScreenContent(
                             onPauseToggle,
                             onFullscreenToggle
                         )
-                        VideoPlayerSeekBar(videoPlayerViewModel, isFullscreen)
+                        VideoPlayerSeekBar(videoPlayerViewModel)
 
                     }
                 }
@@ -311,7 +311,7 @@ fun VideoPlayerControls(
         }
         IconButton(onClick = onFullscreenToggle) {
             Icon(
-                painter = if (isFullscreen) painterResource(R.drawable.full_screen) else painterResource(R.drawable.fullscreen_exit_icon),
+                painter = if (!isFullscreen) painterResource(R.drawable.full_screen) else painterResource(R.drawable.fullscreen_exit_icon),
                 contentDescription = "Toggle Fullscreen", tint = Color.White
             )
         }
@@ -324,7 +324,7 @@ fun VideoPlayerControls(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun VideoPlayerSeekBar(videoPlayerViewModel: VideoPlayerViewModel, isFullscreen:Boolean) {
+fun VideoPlayerSeekBar(videoPlayerViewModel: VideoPlayerViewModel) {
     val duration by videoPlayerViewModel.duration.collectAsState()
     val currentPosition by videoPlayerViewModel.currentPosition.collectAsState()
     var sliderPosition by remember { mutableStateOf(0f) }

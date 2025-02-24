@@ -32,6 +32,7 @@ import com.dastan.videoplayer.data.model.Screen
 import com.dastan.videoplayer.data.model.Video
 import com.dastan.videoplayer.domain.VideoCollectionViewModel
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import com.dastan.videoplayer.R
 import kotlinx.coroutines.CoroutineScope
@@ -143,7 +144,7 @@ fun ShimmerEffectCard() {
     )
     Column {
         Box(
-            modifier = Modifier
+            modifier = Modifier.padding(8.dp)
                 .fillMaxWidth()
                 .height(200.dp)
                 .background(brush, shape = RoundedCornerShape(8.dp))
@@ -215,13 +216,13 @@ fun VideoThumbnail(thumbUrl: String) {
         model = ImageRequest.Builder(LocalContext.current)
             .data(thumbUrl)
             .crossfade(true)
+            .diskCachePolicy(CachePolicy.ENABLED)
             .error(R.drawable.resource_default)
             .placeholder(R.drawable.placeholder)
             .build(),
         contentDescription = null,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(4.dp)
             .height(200.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.background),
